@@ -24,13 +24,13 @@ The demo executes the following autonomous sequence:
 
 ## Prerequisites
 
-1. Start the simulation, PX4 and QGC as described in the [setup guide](../../docs/setup.md).
+1. Start the simulation, PX4 and QGC as described in the [simulation guide](../../docs/simulation.md).
 2. Ensure the vehicle is armed (GPS lock, all sensors healthy)
 3. Verify QGroundControl connection for mode monitoring
 
 ## Usage
 
-1. Start the simulation, PX4 and QGC as described in the [setup guide](../../docs/setup.md).
+1. Start the simulation, PX4 and QGC as described in the [simulation guide](../../docs/simulation.md).
 2. Start the additional ROS 2 node through the [common launchfile](../px4_ossna_26/README.md)
 
    ```sh

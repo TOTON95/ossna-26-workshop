@@ -34,7 +34,7 @@ For more detailed instructions and guidance, please refer to the dedicated **REA
 
 ### Presentation
 
-[Link to Presentation on Google Slides](https://docs.google.com/presentation/d/1S0erGP3pqjSlPU8--NCr8zwdNYxXy2enIBOqPs76fCQ/edit?usp=sharing)
+[Link to Presentation on Google Slides](https://docs.google.com/presentation/d/19ol2Q97c6IONSkELWRZrWnt5dX43BAUpSw_MzT4H2Lo/edit?usp=sharing)
 
 ### Introduction & Drone Architecture
 
@@ -42,10 +42,15 @@ For more detailed instructions and guidance, please refer to the dedicated **REA
 
 ### Environment Setup
 
-For detailed environment and Docker setup instructions, see the [docs/README.md](docs/setup.md) guide.
+The environment guide is split into three pages — follow them in order:
+
+1. [Setup](docs/setup.md) — install the requirements and start the container.
+2. [Running the simulation](docs/simulation.md) — open the workshop terminals and start PX4 + Gazebo.
+3. [Linking the simulation to ROS 2](docs/ros2.md) — bridge PX4 and Gazebo into the ROS 2 graph.
+
 Please complete this step before you proceed.
 
-### Control Pipelines
+### Control Pipeliness
 
 There are two main ways to interact with PX4 and ROS 2:
 

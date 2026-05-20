@@ -34,7 +34,7 @@ The system:
 
 ## Prerequisites
 
-1. Start the simulation, PX4 and QGC as described in the [setup guide](../../docs/setup.md) with the `walls` world and the x500 with the downfacing camera:
+1. Start the simulation, PX4 and QGC as described in the [simulation guide](../../docs/simulation.md) with the `walls` world and the x500 with the downfacing camera:
 
    ```sh
    python3 /home/ubuntu/PX4-gazebo-models/simulation-gazebo --model_store /home/ubuntu/PX4-gazebo-models/ --world walls

@@ -21,4 +21,4 @@ You can use [Foxglove client](https://foxglove.dev/) to visualize the drone posi
 The [ossna-26-workshop](../../foxglove/ossna-26-workshop.json) layout provides 3D visualization, xy-map and altitude plot.
 
 Gazebo, PX4 and QGC are not automatically started by this launchfile.
-Please refer to [the setup](../../docs/setup.md) to know more on how to start them.
+Please refer to the [simulation guide](../../docs/simulation.md) to know more on how to start them.

@@ -16,7 +16,7 @@ The Offboard Demo implements a state-based flight controller that executes the f
 
 ## Usage
 
-1. Start the simulation, PX4 and QGC as described in the [setup guide](../../docs/setup.md).
+1. Start the simulation, PX4 and QGC as described in the [simulation guide](../../docs/simulation.md).
 2. Start the additional ROS 2 node through the [common launchfile](../px4_ossna_26/README.md).
 
    ```sh
