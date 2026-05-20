@@ -28,14 +28,19 @@
 #   scratch - empty pane for ad-hoc `ros2 topic echo`, `ros2 node list`,
 #             editing files with vim/nano, etc.
 #
-# If the session already exists this just reattaches to it.
+# If the session already exists this reattaches to it. The attach uses
+# `-d` to detach any other client first: the 6-pane layout is built from
+# percentage splits, so two clients of different terminal sizes attached
+# at once make tmux resize the shared window and collapse the panes. One
+# client at a time keeps the layout intact, and makes `docker_run.sh
+# --tmux` and `docker exec ... workshop-tmux` behave identically.
 
 set -eu
 
 SESSION="ossna"
 
 if tmux has-session -t "${SESSION}" 2>/dev/null; then
-    exec tmux attach -t "${SESSION}"
+    exec tmux attach -d -t "${SESSION}"
 fi
 
 # Start the 'sim' window with the first pane (top-left = gazebo).
@@ -172,7 +177,7 @@ tmux new-window -t "${SESSION}" -n scratch \
 SCRATCH_PANE="$(tmux display-message -p -t "${SESSION}:scratch" '#{pane_id}')"
 tmux select-pane -t "${SCRATCH_PANE}" -T "scratch"
 
-# Focus the first pane and attach.
+# Focus the first pane and attach (-d: detach any other client, see above).
 tmux select-window -t "${SESSION}:sim"
 tmux select-pane -t "${SESSION}:sim.0"
-exec tmux attach -t "${SESSION}"
+exec tmux attach -d -t "${SESSION}"
