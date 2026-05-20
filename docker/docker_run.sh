@@ -28,6 +28,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# If the workshop container is already running, a second `docker run` with
+# the same --name fails with a name conflict, so any terminal beyond the
+# first never makes it into the container. Detect the running container and
+# exec a new shell into it instead.
+if docker ps --format '{{.Names}}' | grep -qx px4-ossna-26; then
+    echo "Container px4-ossna-26 is already running — attaching a new shell."
+    if [ "$TMUX_LAYOUT" = true ]; then
+        exec docker exec -it px4-ossna-26 workshop-tmux
+    else
+        exec docker exec -it px4-ossna-26 bash
+    fi
+fi
+
 # Build docker run command
 DOCKER_CMD="docker run -it --rm"
 
