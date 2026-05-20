@@ -199,6 +199,15 @@ tmux select-pane -t "${COMMON_PANE}"   -T "ros2 common.launch.py"
 tmux select-pane -t "${EXAMPLE1_PANE}" -T "ros2 node 1"
 tmux select-pane -t "${EXAMPLE2_PANE}" -T "ros2 node 2"
 
+# Record each pane's hint command in a pane-scoped @hint option so the
+# re-hint block below can redraw it once the panes are at their real size.
+tmux set -p -t "${GZ_PANE}"       @hint "workshop-hint gazebo"
+tmux set -p -t "${PX4_PANE}"      @hint "workshop-hint px4"
+tmux set -p -t "${QGC_PANE}"      @hint "workshop-hint qgc"
+tmux set -p -t "${COMMON_PANE}"   @hint "workshop-hint common"
+tmux set -p -t "${EXAMPLE1_PANE}" @hint "workshop-hint example1"
+tmux set -p -t "${EXAMPLE2_PANE}" @hint "workshop-hint example2"
+
 # Scratch window: title it so the pane-border-format does not render the
 # default (container hostname); the welcome banner is the first thing
 # attendees see when they switch to this window with Ctrl-b 1.
@@ -206,6 +215,32 @@ tmux new-window -t "${SESSION}" -n scratch \
     "clear; workshop-welcome 2>/dev/null || true; exec bash"
 SCRATCH_PANE="$(tmux display-message -p -t "${SESSION}:scratch" '#{pane_id}')"
 tmux select-pane -t "${SCRATCH_PANE}" -T "scratch"
+tmux set -p -t "${SCRATCH_PANE}" @hint "workshop-welcome 2>/dev/null || true"
+
+# The hints above were printed while the session was still detached, i.e.
+# into an 80x24 window where every pane is tiny — a card taller than its
+# pane loses its top (the title and the command to copy). Re-render each
+# hint once a client has attached and the panes are at their real size;
+# workshop-hint then fits the card to the pane. This runs in the
+# background so it does not block the attach, and only touches panes still
+# sitting at an idle bash prompt, so it can never type into a process the
+# attendee has already started.
+(
+    # Wait (up to ~15s) for a client, so the window is at its final size.
+    for _ in $(seq 1 150); do
+        tmux list-clients -t "${SESSION}" 2>/dev/null | grep -q . && break
+        sleep 0.1
+    done
+    sleep 0.5   # let the attach-time resize settle
+    for pane in $(tmux list-panes -s -t "${SESSION}" -F '#{pane_id}'); do
+        hint="$(tmux show -pqv -t "${pane}" @hint)"
+        [ -n "${hint}" ] || continue
+        [ "$(tmux display -p -t "${pane}" '#{pane_current_command}')" = bash ] \
+            || continue
+        # Leading space keeps the re-render out of the shell history.
+        tmux send-keys -t "${pane}" " clear; ${hint}" Enter
+    done
+) >/dev/null 2>&1 &
 
 # Focus the first pane and attach (-d: detach any other client, see above).
 tmux select-window -t "${SESSION}:sim"
