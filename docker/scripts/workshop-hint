@@ -4,7 +4,12 @@
 # one short, quote-safe command (`workshop-hint gazebo`, etc.) instead of
 # a long multi-line printf that races with the freshly-spawned shell.
 #
-# TOPIC is one of: gazebo, px4, qgc, common, example.
+# Every card is keyed by the same exercise names so that, whichever pane
+# you look at, you can follow one exercise straight down the layout:
+# gazebo -> px4 -> common -> node 1 -> node 2. That mirrors the per-exercise
+# README flow in px4_ossna_26/*/README.md.
+#
+# TOPIC is one of: gazebo, px4, qgc, common, example1, example2.
 
 import sys
 
@@ -12,59 +17,153 @@ import sys
 PINK   = "\x1b[38;5;213m"
 CYAN   = "\x1b[38;5;87m"
 GREEN  = "\x1b[38;5;156m"
+YELLOW = "\x1b[38;5;228m"
 DIM    = "\x1b[38;5;245m"
 BOLD   = "\x1b[1m"
 RESET  = "\x1b[0m"
 
 
-def card(title: str, blurb: str, commands: list[str]) -> str:
-    out = []
-    out.append(f"{PINK}{BOLD}▙▟ {title} ▙▟{RESET}")
-    out.append(f"{DIM}{blurb}{RESET}")
-    for c in commands:
-        out.append(f"{CYAN}  {c}{RESET}")
+# --- The six workshop exercises, in the order the workshop runs them. ----
+# Each entry: name, Gazebo world, PX4 airframe, node-1 command, node-2
+# command (None when the exercise needs only one ROS 2 node).
+ARUCO_AT = ("ros2 launch aruco_tracker aruco_tracker.launch.py "
+            "world_name:={world} model_name:=x500_mono_cam_down_0")
+
+EXERCISES = [
+    {
+        "name": "Offboard Demo", "world": "default", "airframe": "4001",
+        "node1": "ros2 launch offboard_demo offboard_demo.launch.py",
+        "node2": None,
+    },
+    {
+        "name": "Custom Mode Demo", "world": "default", "airframe": "4001",
+        "node1": "ros2 launch custom_mode_demo custom_mode_demo.launch.py",
+        "node2": None,
+    },
+    {
+        "name": "ArUco Tracker", "world": "aruco", "airframe": "4014",
+        "node1": ARUCO_AT.format(world="aruco"),
+        "node2": None,
+    },
+    {
+        "name": "Teleop", "world": "walls", "airframe": "4013",
+        "node1": "ros2 launch teleop teleop.launch.py",
+        "node2": "ros2 run teleop_twist_rpyt_keyboard teleop_twist_rpyt_keyboard",
+    },
+    {
+        "name": "Precision Land", "world": "aruco", "airframe": "4014",
+        "node1": ARUCO_AT.format(world="aruco"),
+        "node2": "ros2 run precision_land precision_land --ros-args -p use_sim_time:=true",
+    },
+    {
+        "name": "Precision Land Executor", "world": "walls", "airframe": "4014",
+        "node1": ARUCO_AT.format(world="walls"),
+        "node2": "ros2 launch precision_land_executor precision_land_executor.launch.py",
+    },
+]
+
+
+def title(text: str) -> str:
+    return f"{PINK}{BOLD}▙▟ {text} ▙▟{RESET}"
+
+
+def blurb(text: str) -> str:
+    return f"{DIM}{text}{RESET}"
+
+
+def label(text: str) -> str:
+    return f"{YELLOW}  {text}{RESET}"
+
+
+def cmd(text: str) -> str:
+    return f"{CYAN}    {text}{RESET}"
+
+
+def steps_card(head: str, intro: str, key: str, empty_note: str | None) -> str:
+    """Render a node-1 / node-2 card: one `label / command` block per
+    exercise that actually uses the pane, exercises sharing a command
+    grouped onto a single label."""
+    out = [title(head), blurb(intro)]
+    seen: dict[str, list[str]] = {}
+    order: list[str] = []
+    for ex in EXERCISES:
+        c = ex[key]
+        if c is None:
+            continue
+        if c in seen:
+            seen[c].append(ex["name"])
+        else:
+            seen[c] = [ex["name"]]
+            order.append(c)
+    for c in order:
+        out.append(label("  +  ".join(seen[c])))
+        out.append(cmd(c))
+    if empty_note:
+        out.append(blurb(empty_note))
+    return "\n".join(out)
+
+
+def gazebo_card() -> str:
+    out = [
+        title("Gazebo Harmonic"),
+        blurb("Spawn the world FIRST. Paste, then set --world for your exercise:"),
+        cmd("python3 /home/ubuntu/PX4-gazebo-models/simulation-gazebo \\"),
+        cmd("  --model_store /home/ubuntu/PX4-gazebo-models/ --world default"),
+        blurb("  --world per exercise:"),
+    ]
+    for world, exs in [
+        ("default", "Offboard Demo, Custom Mode Demo"),
+        ("aruco",   "ArUco Tracker, Precision Land"),
+        ("walls",   "Teleop, Precision Land Executor"),
+    ]:
+        out.append(f"{YELLOW}    {world:<9}{RESET}{DIM}{exs}{RESET}")
+    return "\n".join(out)
+
+
+def px4_card() -> str:
+    out = [
+        title("PX4 v1.16 SITL"),
+        blurb("Spawn the drone once Gazebo is up. Set AUTOSTART per exercise:"),
+        cmd("PX4_GZ_STANDALONE=1 PX4_SYS_AUTOSTART=4001 \\"),
+        cmd("  PX4_PARAM_UXRCE_DDS_SYNCT=0 \\"),
+        cmd("  /home/ubuntu/px4_sitl/bin/px4 -w /home/ubuntu/px4_sitl/romfs"),
+        blurb("  PX4_SYS_AUTOSTART per exercise:"),
+    ]
+    for code, model, exs in [
+        ("4001", "x500",               "Offboard Demo, Custom Mode Demo"),
+        ("4014", "x500_mono_cam_down",  "ArUco Tracker, Precision Land, Precision Land Executor"),
+        ("4013", "x500_lidar_2d",       "Teleop"),
+    ]:
+        out.append(f"{YELLOW}    {code}  {model:<20}{RESET}{DIM}{exs}{RESET}")
     return "\n".join(out)
 
 
 HINTS = {
-    "gazebo": card(
-        "Gazebo Harmonic",
-        "Spawn the physics world. Paste:",
-        [
-            "python3 /home/ubuntu/PX4-gazebo-models/simulation-gazebo \\",
-            "  --model_store /home/ubuntu/PX4-gazebo-models/ --world default",
-        ],
+    "gazebo": gazebo_card(),
+    "px4": px4_card(),
+    "qgc": "\n".join([
+        title("QGroundControl v5.0.8"),
+        blurb("Start any time. Needs an X11-enabled container "
+              "(default for ./docker/docker_run.sh). Same for every exercise:"),
+        cmd("/home/ubuntu/QGroundControl/qgroundcontrol"),
+    ]),
+    "common": "\n".join([
+        title("ROS 2 :: common.launch.py"),
+        blurb("Run AFTER Gazebo + PX4, BEFORE node 1. Same for every exercise."),
+        blurb("XRCE-DDS agent + clock/foxglove bridges + robot_state_publisher + px4_tf:"),
+        cmd("ros2 launch px4_ossna_26 common.launch.py"),
+    ]),
+    "example1": steps_card(
+        "ROS 2 :: node 1  (first launch, every exercise)",
+        "Run the line for YOUR exercise, once common.launch.py is up:",
+        "node1",
+        None,
     ),
-    "px4": card(
-        "PX4 v1.16 SITL",
-        "Once Gazebo is up, paste (4001 = x500):",
-        [
-            "PX4_GZ_STANDALONE=1 PX4_SYS_AUTOSTART=4001 \\",
-            "  PX4_PARAM_UXRCE_DDS_SYNCT=0 \\",
-            "  /home/ubuntu/px4_sitl/bin/px4 -w /home/ubuntu/px4_sitl/romfs",
-        ],
-    ),
-    "qgc": card(
-        "QGroundControl v5.0.8",
-        "Needs an X11-enabled container (default for ./docker/docker_run.sh).",
-        ["/home/ubuntu/QGroundControl/qgroundcontrol"],
-    ),
-    "common": card(
-        "ROS 2 :: common.launch.py",
-        "XRCE-DDS agent + clock/foxglove bridges + robot_state_publisher + px4_tf + static TF:",
-        ["ros2 launch px4_ossna_26 common.launch.py"],
-    ),
-    "example": card(
-        "ROS 2 :: example launch",
-        "Pick ONE once common.launch.py is up:",
-        [
-            "ros2 launch offboard_demo offboard_demo.launch.py",
-            "ros2 launch custom_mode_demo custom_mode_demo.launch.py",
-            "ros2 launch aruco_tracker aruco_tracker.launch.py world_name:=aruco model_name:=x500_mono_cam_down_0",
-            "ros2 launch teleop teleop.launch.py",
-            "ros2 run   precision_land precision_land --ros-args -p use_sim_time:=true",
-            "ros2 launch precision_land_executor precision_land_executor.launch.py",
-        ],
+    "example2": steps_card(
+        "ROS 2 :: node 2  (second launch — teleop & precision-land only)",
+        "Run AFTER node 1, same exercise. The other exercises leave this empty.",
+        "node2",
+        "# Precision Land also needs node 1 (ArUco Tracker) running first.",
     ),
 }
 
