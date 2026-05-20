@@ -40,7 +40,8 @@ ${SUDO} apt-get install -y --no-install-recommends \
     ros-humble-vision-msgs \
     libgflags-dev \
     python3-rospkg \
-    tmux
+    tmux \
+    xclip
 
 ${SUDO} rm -rf /var/lib/apt/lists/*
 ${SUDO} apt-get clean

@@ -86,7 +86,28 @@ tmux set -g pane-border-lines heavy          # thicker borders on tmux 3.2+
 # system clipboard via the OSC 52 escape sequence, so a plain drag is all
 # you need — no Shift, and the selection survives screen updates.
 tmux set -g mouse on
+# --- Copy to the host's system clipboard ---------------------------------
+# The container shares the host X server (DISPLAY and /tmp/.X11-unix are
+# forwarded in), so `xclip` writing the X CLIPBOARD selection writes the
+# host's real clipboard directly. That works no matter which terminal
+# emulator the attendee runs — unlike OSC 52, which VTE-based terminals
+# (GNOME Terminal, Terminator, Tilix) silently drop.
+#
+# On mouse drag-release, pipe the selection to xclip and leave copy-mode so
+# the live gazebo/px4 output resumes scrolling. Same for the vi-style `y`
+# and `Enter` copy keys.
+CLIP='xclip -selection clipboard -in'
+tmux bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-and-cancel "${CLIP}"
+tmux bind -T copy-mode-vi y                 send -X copy-pipe-and-cancel "${CLIP}"
+tmux bind -T copy-mode-vi Enter             send -X copy-pipe-and-cancel "${CLIP}"
+
+# Belt-and-braces: also forward copies over OSC 52 for terminals that DO
+# support it (kitty, foot, WezTerm, xterm); harmless where unsupported.
+# tmux only emits OSC 52 when it thinks the terminal advertises the `Ms`
+# capability, which the tmux-256color/screen terminfo entries omit — so
+# force it on for every terminal.
 tmux set -g set-clipboard on
+tmux set -ag terminal-overrides ',*:Ms=\E]52;%p1%s;%p2%s\007'
 
 # --- Dracula-inspired palette (synthwave-y, dev-friendly) ---
 #   bg     #282a36   bg-dark  #13111c
