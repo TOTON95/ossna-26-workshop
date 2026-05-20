@@ -51,11 +51,18 @@ tmux set -ga terminal-overrides ",xterm-256color:Tc"   # tell tmux the outer ter
 tmux set -g pane-border-lines heavy          # thicker borders on tmux 3.2+
 
 # Mouse mode ON so attendees can click panes to focus them and scroll
-# back through long-running command output with the wheel. To copy text
-# while mouse mode is on, HOLD SHIFT while dragging — every common
-# terminal (GNOME, Konsole, Alacritty, Kitty, iTerm2, Terminal.app)
-# treats Shift+drag as a native terminal selection that bypasses tmux.
+# back through long-running command output with the wheel.
+#
+# To copy text, just drag with the mouse. A drag puts tmux into copy-mode,
+# which FREEZES that pane for the duration of the selection — so the
+# continuous gazebo / px4 output can no longer scroll your selection away
+# (the old advice was Shift+drag for a native terminal selection, but that
+# is wiped the instant the pane or the animated status bar repaints).
+# `set-clipboard on` then forwards whatever tmux copies to the host's
+# system clipboard via the OSC 52 escape sequence, so a plain drag is all
+# you need — no Shift, and the selection survives screen updates.
 tmux set -g mouse on
+tmux set -g set-clipboard on
 
 # --- Dracula-inspired palette (synthwave-y, dev-friendly) ---
 #   bg     #282a36   bg-dark  #13111c

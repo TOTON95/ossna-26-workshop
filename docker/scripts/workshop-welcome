@@ -39,6 +39,6 @@ line(f"  {DIM}│{RESET}  {GREEN}Alt+z{RESET}                  zoom current pane
 line(f"  {DIM}│{RESET}  {CYAN}Ctrl-b 0{RESET} / {CYAN}Ctrl-b 1{RESET}       same as Alt+1 / Alt+2 (tmux defaults)")
 line(f"  {DIM}│{RESET}  {CYAN}Ctrl-b \"{RESET} / {CYAN}Ctrl-b %{RESET}       split current pane horizontally / vertically")
 line(f"  {DIM}│{RESET}  {CYAN}Ctrl-b d{RESET}                detach (sim keeps running); reattach with `workshop-tmux`")
-line(f"  {DIM}│{RESET}  {YELLOW}Shift+drag{RESET}              copy text out of any pane (bypasses tmux mouse capture)")
+line(f"  {DIM}│{RESET}  {YELLOW}mouse drag{RESET}              select text — copies straight to your system clipboard")
 line(f"  {DIM}└─────────────────────────────────────────────────────────────────────────────{RESET}")
 line("")
