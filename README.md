@@ -50,7 +50,7 @@ The environment guide is split into three pages — follow them in order:
 
 Please complete this step before you proceed.
 
-### Control Pipeliness
+### Control Pipelines
 
 There are two main ways to interact with PX4 and ROS 2:
 
