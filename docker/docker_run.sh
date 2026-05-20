@@ -5,6 +5,7 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 NO_GUI=false
 NVIDIA=false
 TMUX_LAYOUT=false
+WAYLAND=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -20,9 +21,13 @@ while [[ $# -gt 0 ]]; do
             TMUX_LAYOUT=true
             shift
             ;;
+        --wayland)
+            WAYLAND=true
+            shift
+            ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: $0 [--no-gui] [--nvidia] [--tmux]"
+            echo "Usage: $0 [--no-gui] [--nvidia] [--tmux] [--wayland]"
             exit 1
             ;;
     esac
@@ -48,6 +53,12 @@ DOCKER_CMD="docker run -it --rm"
 if [ "$NO_GUI" = false ]; then
     DOCKER_CMD="$DOCKER_CMD -v /tmp/.X11-unix:/tmp/.X11-unix:ro"
     DOCKER_CMD="$DOCKER_CMD -e DISPLAY=$DISPLAY"
+
+    # WAYLAND support through X11 Compatibility Layer
+    # We need it so QT can talk to the display for Gazebo
+    if [ $WAYLAND = true ]; then
+	DOCKER_CMD = "$DOCKER_CMD -e QT_QPA_PLATFORM=xcb"
+    fi
 
     # Always forward /dev/dri so Mesa has a working DRM path. The nvidia
     # runtime by itself only provides NVIDIA's GL stack; it does not expose

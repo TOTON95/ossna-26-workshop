@@ -95,6 +95,7 @@ You can use also use these options:
 This option also forwards port `18570` to allow external (Host) QGC connection.
 - `--nvidia` to run the container with the `nvidia` runtime (it requires the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed and registered with Docker on the host; see `nvidia-ctk runtime configure --runtime=docker` followed by `sudo systemctl restart docker`).
 - `--tmux` to drop straight into the preconfigured workshop `tmux` layout (see [Option C](simulation.md#option-c--the-preconfigured-workshop-layout-workshop-tmux)) instead of a plain shell. Detaching the session (`Ctrl+b d`) leaves you in a normal shell with the simulation still running; reattach with `workshop-tmux`.
+- `--wayland` to use Wayland's X11 Compatibility layer so Gazebo can run on machines using Wayland as Window Manager, make sure to run `xhost +local:docker` on your host terminal first.
 
 When using this method you can attach new shell to your container by running
 
