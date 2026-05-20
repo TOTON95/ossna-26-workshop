@@ -57,7 +57,7 @@ if [ "$NO_GUI" = false ]; then
     # WAYLAND support through X11 Compatibility Layer
     # We need it so QT can talk to the display for Gazebo
     if [ $WAYLAND = true ]; then
-	DOCKER_CMD = "$DOCKER_CMD -e QT_QPA_PLATFORM=xcb"
+	DOCKER_CMD="$DOCKER_CMD -e QT_QPA_PLATFORM=xcb"
     fi
 
     # Always forward /dev/dri so Mesa has a working DRM path. The nvidia
