@@ -4,18 +4,20 @@
 #
 # Creates one named session ('ossna') with two windows:
 #
-#   sim     - a 5-pane layout where each of the four long-running
-#             foreground processes (gazebo / px4 / common.launch.py /
-#             example launch) gets its own pane, plus a tall pane on
-#             the right for QGroundControl.
+#   sim     - a 6-pane grid, one pane per long-running foreground
+#             process. Four are workshop infrastructure (gazebo / px4 /
+#             common.launch.py / QGroundControl); the other two are
+#             example panes, because the teleop and precision-land
+#             exercises each run TWO ROS 2 example nodes at the same
+#             time (e.g. aruco_tracker + precision_land).
 #
-#                 ┌─────────────┬─────────────┐
-#                 │ 0: gazebo   │ 1: px4      │
-#                 ├─────────────┤             │
-#                 │ 3: common   │ 2: qgc      │
-#                 ├─────────────┤             │
-#                 │ 4: example  │             │
-#                 └─────────────┴─────────────┘
+#                 ┌──────────────┬──────────────┐
+#                 │ gazebo       │ px4          │
+#                 ├──────────────┼──────────────┤
+#                 │ common       │ qgc          │
+#                 ├──────────────┼──────────────┤
+#                 │ ros2 node 1  │ ros2 node 2  │
+#                 └──────────────┴──────────────┘
 #
 #             Each pane is pre-seeded with comment-only hint lines
 #             showing the command you would paste there. The script
@@ -36,10 +38,18 @@ if tmux has-session -t "${SESSION}" 2>/dev/null; then
     exec tmux attach -t "${SESSION}"
 fi
 
-# Start the 'sim' window with the first pane. Creating the session also
-# starts the tmux server, so subsequent `set -g` (which target the
-# server/session) work.
-tmux new-session -d -s "${SESSION}" -n sim
+# Start the 'sim' window with the first pane (top-left = gazebo).
+#
+# Every pane is created running `clear; workshop-hint TOPIC; exec bash`:
+# it prints the hint card and then `exec bash` hands over to an
+# interactive shell that sources ~/.bashrc (the ROS 2 environment).
+# Running the hint AS the pane's command — instead of injecting it
+# afterwards with `send-keys` — is race-free: there is no freshly-spawned
+# shell for the keystrokes to be lost to before it starts reading input.
+#
+# Creating the session also starts the tmux server, so subsequent
+# `set -g` (which target the server/session) work.
+tmux new-session -d -s "${SESSION}" -n sim "clear; workshop-hint gazebo; exec bash"
 
 # --- Friendlier defaults ---
 tmux set -g pane-border-status top
@@ -118,53 +128,49 @@ tmux bind -n M-k     select-pane -U
 tmux bind -n M-l     select-pane -R
 tmux bind -n M-z     resize-pane -Z               # Alt+z toggles pane zoom
 
-# Build the 5-pane layout described in the header comment. Use stable
-# pane IDs (#{pane_id}, %0/%1/...) instead of numeric pane_index because
-# tmux re-numbers pane_index in reading order whenever the layout
-# changes, which would scramble titles applied after all splits.
+# Build the 6-pane grid described in the header comment (3 rows x 2
+# columns). Use stable pane IDs (#{pane_id}, %0/%1/...) instead of numeric
+# pane_index because tmux re-numbers pane_index in reading order whenever
+# the layout changes, which would scramble titles applied after all splits.
+#
+# Each split-window is given its `clear; workshop-hint TOPIC; exec bash`
+# command directly, so the pane shows its hint with no send-keys race.
 
-# Pane 0 is the existing pane we got from new-session.
+# Pane 0 is the existing pane we got from new-session = top-left (gazebo).
 GZ_PANE="$(tmux display-message -p -t "${SESSION}:sim" '#{pane_id}')"
 
-# Split horizontally → new pane on the right = px4
-PX4_PANE="$(tmux split-window -h -p 50 -t "${GZ_PANE}" -PF '#{pane_id}')"
+# Split horizontally → new pane is the whole right column = px4 (top-right).
+PX4_PANE="$(tmux split-window -h -p 50 -t "${GZ_PANE}" -PF '#{pane_id}' \
+    "clear; workshop-hint px4; exec bash")"
 
-# Split the right column vertically → new pane below = qgc (taking the
-# bottom ~67% so QGC has more room than its tiny pane 1 sibling).
-QGC_PANE="$(tmux split-window -v -p 67 -t "${PX4_PANE}" -PF '#{pane_id}')"
+# Right column: split px4 into thirds → qgc (middle), example node 2 (bottom).
+QGC_PANE="$(tmux split-window -v -p 67 -t "${PX4_PANE}" -PF '#{pane_id}' \
+    "clear; workshop-hint qgc; exec bash")"
+EXAMPLE2_PANE="$(tmux split-window -v -p 50 -t "${QGC_PANE}" -PF '#{pane_id}' \
+    "clear; workshop-hint example2; exec bash")"
 
-# Split the left column (gazebo) vertically → new pane below for common.
-COMMON_PANE="$(tmux split-window -v -p 67 -t "${GZ_PANE}" -PF '#{pane_id}')"
-
-# Split the common pane vertically → new pane below = example launch.
-EXAMPLE_PANE="$(tmux split-window -v -p 50 -t "${COMMON_PANE}" -PF '#{pane_id}')"
+# Left column: split gazebo into thirds → common (middle), example node 1 (bottom).
+COMMON_PANE="$(tmux split-window -v -p 67 -t "${GZ_PANE}" -PF '#{pane_id}' \
+    "clear; workshop-hint common; exec bash")"
+EXAMPLE1_PANE="$(tmux split-window -v -p 50 -t "${COMMON_PANE}" -PF '#{pane_id}' \
+    "clear; workshop-hint example1; exec bash")"
 
 # Title every pane by stable ID (titles render in the pane border
 # thanks to the `pane-border-status top` option set above).
-tmux select-pane -t "${GZ_PANE}"      -T "gazebo"
-tmux select-pane -t "${PX4_PANE}"     -T "px4"
-tmux select-pane -t "${QGC_PANE}"     -T "qgc"
-tmux select-pane -t "${COMMON_PANE}"  -T "ros2 common.launch.py"
-tmux select-pane -t "${EXAMPLE_PANE}" -T "ros2 example launch"
-
-# Seed each pane with one short, quote-free command: `clear; workshop-hint
-# TOPIC`. Earlier attempts at sending a long `printf '...long escape string'`
-# via send-keys raced with the freshly-spawned shell and could leave the
-# first pane stuck in an unterminated command line. A single tiny invocation
-# of an external helper script avoids that entire class of bug.
-tmux send-keys -t "${GZ_PANE}"      "clear; workshop-hint gazebo"  Enter
-tmux send-keys -t "${PX4_PANE}"     "clear; workshop-hint px4"     Enter
-tmux send-keys -t "${QGC_PANE}"     "clear; workshop-hint qgc"     Enter
-tmux send-keys -t "${COMMON_PANE}"  "clear; workshop-hint common"  Enter
-tmux send-keys -t "${EXAMPLE_PANE}" "clear; workshop-hint example" Enter
+tmux select-pane -t "${GZ_PANE}"       -T "gazebo"
+tmux select-pane -t "${PX4_PANE}"      -T "px4"
+tmux select-pane -t "${QGC_PANE}"      -T "qgc"
+tmux select-pane -t "${COMMON_PANE}"   -T "ros2 common.launch.py"
+tmux select-pane -t "${EXAMPLE1_PANE}" -T "ros2 node 1"
+tmux select-pane -t "${EXAMPLE2_PANE}" -T "ros2 node 2"
 
 # Scratch window: title it so the pane-border-format does not render the
 # default (container hostname); the welcome banner is the first thing
 # attendees see when they switch to this window with Ctrl-b 1.
-tmux new-window -t "${SESSION}" -n scratch
+tmux new-window -t "${SESSION}" -n scratch \
+    "clear; workshop-welcome 2>/dev/null || true; exec bash"
 SCRATCH_PANE="$(tmux display-message -p -t "${SESSION}:scratch" '#{pane_id}')"
 tmux select-pane -t "${SCRATCH_PANE}" -T "scratch"
-tmux send-keys -t "${SCRATCH_PANE}" "clear; workshop-welcome 2>/dev/null || true" Enter
 
 # Focus the first pane and attach.
 tmux select-window -t "${SESSION}:sim"
