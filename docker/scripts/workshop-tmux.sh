@@ -52,16 +52,25 @@ fi
 # afterwards with `send-keys` — is race-free: there is no freshly-spawned
 # shell for the keystrokes to be lost to before it starts reading input.
 #
-# Creating the session also starts the tmux server, so subsequent
-# `set -g` (which target the server/session) work.
-tmux new-session -d -s "${SESSION}" -n sim "clear; workshop-hint gazebo; exec bash"
+# Pin default-terminal in the SAME tmux invocation that creates the
+# session, before new-session. A pane takes its TERM from default-terminal
+# at spawn time, and new-session spawns pane %0 immediately — so if
+# default-terminal were set afterwards (with the other `set -g` below) %0
+# would keep tmux's built-in `screen` default while the later split-window
+# panes got tmux-256color. That mismatch shows: `screen` is an 8-colour,
+# non-256 TERM, so the gazebo pane loses the 256-colour hint palette and
+# its coloured shell prompt (Ubuntu's ~/.bashrc only colours the prompt
+# for a *-256color TERM). The two commands must share one `tmux` call —
+# a server with no sessions exits, so `start-server` then a separate `set`
+# would not persist.
+tmux set -g default-terminal "tmux-256color" \; \
+     new-session -d -s "${SESSION}" -n sim "clear; workshop-hint gazebo; exec bash"
 
 # --- Friendlier defaults ---
 tmux set -g pane-border-status top
 tmux set -g history-limit 20000
 tmux setw -g mode-keys vi
 tmux set -g status-interval 1                # refresh status bar (and animations) every second
-tmux set -g default-terminal "tmux-256color" # opt into 256/truecolor where supported
 tmux set -ga terminal-overrides ",xterm-256color:Tc"   # tell tmux the outer terminal is true-color
 tmux set -g pane-border-lines heavy          # thicker borders on tmux 3.2+
 
