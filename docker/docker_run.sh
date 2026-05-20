@@ -4,6 +4,7 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 # Parse command line arguments
 NO_GUI=false
 NVIDIA=false
+TMUX_LAYOUT=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -15,9 +16,13 @@ while [[ $# -gt 0 ]]; do
             NVIDIA=true
             shift
             ;;
+        --tmux)
+            TMUX_LAYOUT=true
+            shift
+            ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: $0 [--no-gui] [--nvidia]"
+            echo "Usage: $0 [--no-gui] [--nvidia] [--tmux]"
             exit 1
             ;;
     esac
@@ -85,7 +90,21 @@ DOCKER_CMD="$DOCKER_CMD -p 8765:8765"
 DOCKER_CMD="$DOCKER_CMD -v ${SCRIPTPATH}/..:/home/ubuntu/ossna-26-workshop_ws/src/ossna-26-workshop"
 DOCKER_CMD="$DOCKER_CMD --name=px4-ossna-26"
 DOCKER_CMD="$DOCKER_CMD -w /home/ubuntu/ossna-26-workshop_ws"
-DOCKER_CMD="$DOCKER_CMD dronecode/ossna-26-workshop bash"
+DOCKER_CMD="$DOCKER_CMD dronecode/ossna-26-workshop"
+
+# Container command. With --tmux, drop straight into the preconfigured
+# workshop tmux layout; otherwise just open a plain bash shell.
+#
+# workshop-tmux is run as a child process (not exec'd as PID 1), so when
+# you detach the tmux session (Ctrl+b d) you fall back to the `exec bash`
+# shell instead of the container exiting — the tmux session keeps running
+# and you can reattach with `workshop-tmux` here, or with
+# `docker exec -it px4-ossna-26 workshop-tmux` from another terminal.
+if [ "$TMUX_LAYOUT" = true ]; then
+    DOCKER_CMD="$DOCKER_CMD bash -c 'workshop-tmux; exec bash'"
+else
+    DOCKER_CMD="$DOCKER_CMD bash"
+fi
 
 # Execute the command
 eval $DOCKER_CMD
