@@ -15,9 +15,15 @@ RUN --mount=type=bind,source=./docker/scripts/install_deps.sh,target=/root/scrip
 # DRI device nodes for GPU rendering (Gazebo, EGL, etc.). When the host's
 # group GIDs differ from the image's, docker_run.sh additionally passes the
 # host GIDs via --group-add.
+#
+# `-s /bin/bash` is required: without it useradd gives the user /bin/sh
+# (dash) as login shell. tmux then spawns every workshop pane as dash,
+# which does not read ~/.bashrc (so the ROS 2 environment is never sourced
+# and `ros2` is "not found") and has no `source` builtin (`source ...`
+# fails with "source: not found"). bash fixes both.
 ENV USER=ubuntu
 RUN groupadd -g 1000 ${USER} && \
-	useradd -m -u 1000 -g ${USER} ${USER} && \
+	useradd -m -u 1000 -g ${USER} -s /bin/bash ${USER} && \
 	(getent group video >/dev/null || groupadd -r video) && \
 	(getent group render >/dev/null || groupadd -r render) && \
 	usermod -a -G video,render ${USER}
