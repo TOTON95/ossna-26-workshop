@@ -8,7 +8,7 @@ It registers two custom flight modes, **SAR (V-Sweep)** and **SAR (Orbital)**, o
 `BaseSARMode` subscribes to `/rover/pose` (`geometry_msgs/msg/PoseStamped`, assumed ROS ENU), converts the target's position and heading to NED, and exposes them to the derived modes:
 
 - **SARVSweepMode** — holds a V/wedge formation around the target: the drone closest to the middle of the swarm leads, the others trail on either wing. The wedge is rotated by the target's heading so it stays pointed the way the target is facing.
-- **SAROrbitalMode** — (formation logic not yet implemented).
+- **SAROrbitalMode** — circles the target at a fixed radius, with drones evenly spaced around the circle and stacked at different altitudes so they don't collide; each drone yaws to face inward, toward the target.
 
 Both modes are registered independently (no `ModeExecutorBase`/chaining), so they show up as two separately selectable flight modes in QGroundControl on each vehicle.
 
