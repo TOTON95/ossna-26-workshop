@@ -48,6 +48,8 @@ def generate_launch_description():
         description="Number of full turns the fake rover circles before holding"
     )
 
+    # Reuses sar_modes_executor's fake rover publisher rather than duplicating
+    # it here — it's a test fixture, not part of the mode-switching logic.
     fake_rover_pose = Node(
         package="sar_modes_executor",
         executable="fake_rover_mover.py",
@@ -69,16 +71,13 @@ def generate_launch_description():
     )
 
     total_drones = 3
-    # PX4 multi-vehicle instances are 1-indexed in this repo's convention
-    # (see px4_ossna_26/px4_tf/README.md: -i 1 -> /px4_1/..., -i 2 -> /px4_2/...),
-    # but the formation math in SARMode.cpp centers around a 0-indexed drone_id.
-    # So the ROS namespace uses the PX4 instance id, while the drone_id
-    # parameter passed to the node stays 0-indexed.
+    # Same 1-indexed PX4 instance / 0-indexed drone_id convention as
+    # sar_modes_executor (see px4_ossna_26/px4_tf/README.md).
     drone_nodes = [
         Node(
-            package="sar_modes_executor",
-            executable="sar_modes_executor",
-            name="sar_modes_executor",
+            package="sar_auto_executor",
+            executable="sar_auto_executor",
+            name="sar_auto_executor",
             namespace=f"px4_{instance_id}",
             output="screen",
             parameters=[
