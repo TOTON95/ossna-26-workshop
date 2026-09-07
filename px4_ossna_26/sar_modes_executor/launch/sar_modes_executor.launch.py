@@ -27,13 +27,21 @@ def generate_launch_description():
         "rover_linear_speed", default_value="0.5",
         description="Fake rover linear speed once moving [m/s]"
     )
-    rover_angular_rate_arg = DeclareLaunchArgument(
-        "rover_angular_rate_deg", default_value="5.0",
-        description="Fake rover heading turn rate once moving [deg/s]"
-    )
     rover_start_delay_arg = DeclareLaunchArgument(
         "rover_start_delay", default_value="3.0",
         description="Seconds the fake rover stays still before it starts moving"
+    )
+    rover_straight_duration_arg = DeclareLaunchArgument(
+        "rover_straight_duration", default_value="45.0",
+        description="Seconds the fake rover drives straight before circling [s]"
+    )
+    rover_circle_radius_arg = DeclareLaunchArgument(
+        "rover_circle_radius", default_value="5.0",
+        description="Fake rover circling radius, minimum 5m [m]"
+    )
+    rover_num_circle_turns_arg = DeclareLaunchArgument(
+        "rover_num_circle_turns", default_value="2.0",
+        description="Number of full turns the fake rover circles before holding"
     )
 
     fake_rover_pose = Node(
@@ -47,8 +55,10 @@ def generate_launch_description():
                 "start_y": _float_param("rover_start_y"),
                 "start_yaw_deg": _float_param("rover_start_yaw_deg"),
                 "linear_speed": _float_param("rover_linear_speed"),
-                "angular_rate_deg": _float_param("rover_angular_rate_deg"),
                 "start_delay": _float_param("rover_start_delay"),
+                "straight_duration": _float_param("rover_straight_duration"),
+                "circle_radius": _float_param("rover_circle_radius"),
+                "num_circle_turns": _float_param("rover_num_circle_turns"),
             }
         ]
     )
@@ -82,8 +92,10 @@ def generate_launch_description():
         rover_y_arg,
         rover_yaw_arg,
         rover_speed_arg,
-        rover_angular_rate_arg,
         rover_start_delay_arg,
+        rover_straight_duration_arg,
+        rover_circle_radius_arg,
+        rover_num_circle_turns_arg,
         *drone_nodes,
         fake_rover_pose,
     ])

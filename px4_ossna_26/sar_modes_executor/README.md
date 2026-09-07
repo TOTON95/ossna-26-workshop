@@ -66,7 +66,7 @@ This exercise runs 3 drones at once, using this repo's multi-vehicle convention 
    ros2 launch sar_modes_executor sar_modes_executor.launch.py
    ```
 
-   `fake_rover_mover.py` starts at 5m East / 3m North with a ~45° heading, sits still for `rover_start_delay` seconds (default 3s), then moves in a straight line at `rover_linear_speed` (default 0.5 m/s) while smoothly turning at `rover_angular_rate_deg` (default 5 deg/s) — a car-like slow turn, so the target is actually moving instead of static. All of these are launch args (`rover_start_x`, `rover_start_y`, `rover_start_yaw_deg`, `rover_linear_speed`, `rover_angular_rate_deg`, `rover_start_delay`) if you want to change them. Sanity-check it's actually streaming (and moving, after the start delay) with:
+   `fake_rover_mover.py` starts at 5m East / 3m North with a ~45° heading, sits still once for `rover_start_delay` seconds (default 3s), then loops indefinitely (until the node is stopped): drives straight at `rover_linear_speed` (default 0.5 m/s) for `rover_straight_duration` seconds (default 45s), then circles at `rover_circle_radius` (default 5.0m, clamped to a 5m minimum) for `rover_num_circle_turns` full turns (default 2.0), then back to straight, repeating. All of these are launch args (`rover_start_x`, `rover_start_y`, `rover_start_yaw_deg`, `rover_linear_speed`, `rover_start_delay`, `rover_straight_duration`, `rover_circle_radius`, `rover_num_circle_turns`) if you want to change them. Sanity-check it's actually streaming (and moving, after the start delay) with:
 
    ```sh
    ros2 topic echo /rover/pose
