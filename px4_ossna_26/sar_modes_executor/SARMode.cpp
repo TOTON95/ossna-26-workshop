@@ -49,8 +49,8 @@ void SARVSweepMode::updateSetpoint(float dt) {
     (void)dt;
     if (!_has_target) return;
 
-    float side_offset = (_drone_id - (_total_drones - 1) / 2.0f) * 6.0f;
-    float forward_offset = 8.0f - std::abs(_drone_id - (_total_drones - 1) / 2.0f) * 4.0f;
+    float side_offset = (_drone_id - (_total_drones - 1) / 2.0f) * 8.0f;
+    float forward_offset = 10.0f - std::abs(_drone_id - (_total_drones - 1) / 2.0f) * 6.0f;
 
     // Rotate the (forward, side) wedge offset from the rover's body frame into NED
     // using its heading, so the V stays pointed the way the rover is facing.
@@ -59,7 +59,10 @@ void SARVSweepMode::updateSetpoint(float dt) {
     float offset_north = forward_offset * cos_yaw - side_offset * sin_yaw;
     float offset_east = forward_offset * sin_yaw + side_offset * cos_yaw;
 
-    Eigen::Vector3f offset(offset_north, offset_east, -3.0f);
+    // Same altitude layering as SAROrbitalMode, so mode switches don't change height.
+    float altitude_layer = -3.0f - (0.3f * static_cast<float>(_drone_id));
+
+    Eigen::Vector3f offset(offset_north, offset_east, altitude_layer);
 
     px4_ros2::TrajectorySetpoint setpoint;
     setpoint.withPosition(_target_pos + offset)
@@ -70,9 +73,35 @@ void SARVSweepMode::updateSetpoint(float dt) {
 
 // SAROrbitalMode
 SAROrbitalMode::SAROrbitalMode(rclcpp::Node& node, int drone_id, int total_drones)
-	: BaseSARMode(node, "SAR (Orbital)"), _drone_id(drone_id), _total_drones(total_drones) {}
+	: BaseSARMode(node, "SAR (Orbital)"), _drone_id(drone_id),
+	  _total_drones(total_drones > 0 ? total_drones : 1) {}
 
 void SAROrbitalMode::updateSetpoint(float dt) {
+    if (!_has_target) return;
+
+    _elapsed_time += dt;
+
+    float current_radius, current_omega;
+    {
+        std::lock_guard<std::mutex> lock(_param_mutex);
+        current_radius = _radius;
+        current_omega = _omega;
+    }
+
+    float phase_offset = static_cast<float>(_drone_id) * (2.0f * M_PI / static_cast<float>(_total_drones));
+    float angle = current_omega * _elapsed_time + phase_offset;
+    float altitude_layer = -3.0f - (0.3f * static_cast<float>(_drone_id));
+
+    Eigen::Vector3f offset(
+        current_radius * std::cos(angle),
+        current_radius * std::sin(angle),
+        altitude_layer
+    );
+
+    px4_ros2::TrajectorySetpoint setpoint;
+    setpoint.withPosition(_target_pos + offset)
+            .withYaw(px4_ros2::wrapPi(angle + static_cast<float>(M_PI)));
+    _trajectory_setpoint->update(setpoint);
 }
 
 int main(int argc, char* argv[]) {
@@ -81,7 +110,11 @@ int main(int argc, char* argv[]) {
     auto node = std::make_shared<rclcpp::Node>(kNodeName);
 
     if (kEnableDebugOutput) {
-        rcutils_logging_set_logger_level(node->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+        auto ret = rcutils_logging_set_logger_level(node->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+        if (ret != RCUTILS_RET_OK) {
+            RCLCPP_ERROR(node->get_logger(), "Error setting severity: %s", rcutils_get_error_string().str);
+            rcutils_reset_error();
+        }
     }
 
     const int drone_id = node->declare_parameter<int>("drone_id", 0);
