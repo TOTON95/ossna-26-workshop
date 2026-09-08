@@ -38,11 +38,21 @@ Same as [`sar_modes`](../sar_modes/README.md#prerequisites) — Gazebo, 3 PX4 in
 
 ## CLI-only testing
 
-Same `commander` flow as `sar_modes`'s README, but note: with the executor involved, there are now 3 registered entries (`SAR (Auto)`, `SAR (V-Sweep)`, `SAR (Orbital)`), and it's not yet confirmed here whether the executor's owned mode consumes the same `extN` numbering as a plain mode, or a separate counter (a PX4 forum note mentioned distinct "mode" vs "mode executor" registration counters). Check with `commander status` before assuming which `extN` is which:
+Same `commander` flow as `sar_modes`'s README. With the executor involved there are 3 registered entries, and confirmed live (`commander --instance N status`) they share one `extN` counter — registration order was V-Sweep, Orbital, then the executor's owned Auto mode, giving:
 
 ```
-commander status              # confirm which extN is SAR (Auto) vs V-Sweep vs Orbital
+External Mode 1: nav_state: 23, name: SAR (V-Sweep)
+External Mode 2: nav_state: 24, name: SAR (Orbital)
+External Mode 3: nav_state: 25, name: SAR (Auto)
+Mode Executor 1: owned nav_state: 25, in charge: yes
+```
+
+So `ext3` is `SAR (Auto)`. The separate "Mode Executor" line isn't a competing numbering scheme — it just reports which executor owns which mode and whether it's currently in charge (note "in charge: yes" can show even while the *active* nav_state is 23, not 25 — being in charge means the executor is the one directing which mode runs via `scheduleMode`, not that the FMU's active state equals the owned mode's ID). Re-verify with `commander status` if you change registration order in `main()`, since this mapping isn't guaranteed to stay ext3 if that changes.
+
+```
 commander arm -f
 commander takeoff
-commander mode extN           # switch to whichever extN is SAR (Auto)
+commander mode ext3            # switch to SAR (Auto)
 ```
+
+If running via the CLI rather than an interactive `pxh>` console, use the `px4-commander` client symlink with `--instance` *before* the subcommand: `px4-commander --instance 2 status` (not `status --instance 2`).
