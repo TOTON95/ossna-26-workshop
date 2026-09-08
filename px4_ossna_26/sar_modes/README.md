@@ -58,12 +58,12 @@ This exercise runs 3 drones at once, using this repo's multi-vehicle convention 
    ros2 launch px4_ossna_26 common.launch.py
    ```
 
-2. Build and run `sar_modes_executor.launch.py`. It starts one `sar_modes_executor` node per drone (namespaced `px4_1`/`px4_2`/`px4_3`, each told its own `drone_id` via a ROS parameter) plus `fake_rover_mover.py` — no rover simulation model needed, just the pose stream:
+2. Build and run `sar_modes.launch.py`. It starts one `sar_modes` node per drone (namespaced `px4_1`/`px4_2`/`px4_3`, each told its own `drone_id` via a ROS parameter) plus `fake_rover_mover.py` — no rover simulation model needed, just the pose stream:
 
    ```sh
-   colcon build --packages-select sar_modes_executor
+   colcon build --packages-select sar_modes
    source install/setup.bash
-   ros2 launch sar_modes_executor sar_modes_executor.launch.py
+   ros2 launch sar_modes sar_modes.launch.py
    ```
 
    `fake_rover_mover.py` starts at 5m East / 3m North with a ~45° heading, sits still once for `rover_start_delay` seconds (default 3s), then loops indefinitely (until the node is stopped): drives straight at `rover_min_linear_speed` (default 0.2 m/s) for `rover_straight_duration` seconds (default 45s), then circles at `rover_max_linear_speed` (default 0.8 m/s) around `rover_circle_radius` (default 5.0m, clamped to a 5m minimum) for `rover_num_circle_turns` full turns (default 2.0), then back to straight, repeating. The speed change between phases lets a speed-based mode switcher (see [`sar_auto_executor`](../sar_auto_executor/README.md)) actually exercise both sides of its threshold in one run. All of these are launch args (`rover_start_x`, `rover_start_y`, `rover_start_yaw_deg`, `rover_min_linear_speed`, `rover_max_linear_speed`, `rover_start_delay`, `rover_straight_duration`, `rover_circle_radius`, `rover_num_circle_turns`) if you want to change them. Sanity-check it's actually streaming (and moving, after the start delay) with:
@@ -96,7 +96,7 @@ PX4 instance spawning (Prerequisites step 2) is unchanged — those commands don
 
 **QGroundControl**: skip it entirely and use the `commander` CLI below instead. If you'd still rather use QGC, the `--no-gui` container exposes UDP port `18570` to the host, so you can run QGC on the host and add a custom UDP link to `127.0.0.1:18570` (a GUI-enabled container does not expose this port).
 
-**Mode selection**: driven from the PX4 SITL console (the `pxh>` shell in each `px4` pane) instead of QGroundControl. Steps 1-2 of Usage above (`common.launch.py`, `sar_modes_executor.launch.py`) still apply unchanged.
+**Mode selection**: driven from the PX4 SITL console (the `pxh>` shell in each `px4` pane) instead of QGroundControl. Steps 1-2 of Usage above (`common.launch.py`, `sar_modes.launch.py`) still apply unchanged.
 
 In each vehicle's own `pxh>` console:
 

@@ -49,7 +49,7 @@ def generate_launch_description():
     )
 
     fake_rover_pose = Node(
-        package="sar_modes_executor",
+        package="sar_modes",
         executable="fake_rover_mover.py",
         name="fake_rover_mover",
         output="screen",
@@ -76,9 +76,9 @@ def generate_launch_description():
     # parameter passed to the node stays 0-indexed.
     drone_nodes = [
         Node(
-            package="sar_modes_executor",
-            executable="sar_modes_executor",
-            name="sar_modes_executor",
+            package="sar_modes",
+            executable="sar_modes",
+            name="sar_modes",
             namespace=f"px4_{instance_id}",
             output="screen",
             parameters=[

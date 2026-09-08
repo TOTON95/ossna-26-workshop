@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fake rover pose publisher for testing sar_modes_executor without a rover model.
+"""Fake rover pose publisher for testing sar_modes without a rover model.
 
 Publishes a moving PoseStamped on /rover/pose (ROS ENU): stands still for
 start_delay seconds once at startup, then loops straight-line driving at
