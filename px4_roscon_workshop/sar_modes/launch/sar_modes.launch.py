@@ -70,7 +70,7 @@ def generate_launch_description():
 
     total_drones = 3
     # PX4 multi-vehicle instances are 1-indexed in this repo's convention
-    # (see px4_ossna_26/px4_tf/README.md: -i 1 -> /px4_1/..., -i 2 -> /px4_2/...),
+    # (see px4_roscon_workshop/px4_tf/README.md: -i 1 -> /px4_1/..., -i 2 -> /px4_2/...),
     # but the formation math in SARMode.cpp centers around a 0-indexed drone_id.
     # So the ROS namespace uses the PX4 instance id, while the drone_id
     # parameter passed to the node stays 0-indexed.

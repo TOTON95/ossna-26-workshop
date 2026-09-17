@@ -55,7 +55,7 @@ This exercise runs 3 drones at once, using this repo's multi-vehicle convention 
 1. Launch the common launchfile — this brings up the shared `MicroXRCEAgent` all 3 SITL instances connect to. Note: `px4_tf_publisher`/`robot_state_publisher` inside it are single-vehicle and unnamespaced, so with all 3 instances namespaced (`px4_1`/`px4_2`/`px4_3`) they just sit idle — harmless, not needed for this exercise.
 
    ```sh
-   ros2 launch px4_ossna_26 common.launch.py
+   ros2 launch px4_roscon_workshop common.launch.py
    ```
 
 2. Build and run `sar_modes.launch.py`. It starts one `sar_modes` node per drone (namespaced `px4_1`/`px4_2`/`px4_3`, each told its own `drone_id` via a ROS parameter) plus `fake_rover_mover.py` — no rover simulation model needed, just the pose stream:

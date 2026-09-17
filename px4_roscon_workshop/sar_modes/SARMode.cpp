@@ -70,9 +70,35 @@ void SARVSweepMode::updateSetpoint(float dt) {
 
 // SAROrbitalMode
 SAROrbitalMode::SAROrbitalMode(rclcpp::Node& node, int drone_id, int total_drones)
-	: BaseSARMode(node, "SAR (Orbital)"), _drone_id(drone_id), _total_drones(total_drones) {}
+	: BaseSARMode(node, "SAR (Orbital)"), _drone_id(drone_id),
+	  _total_drones(total_drones > 0 ? total_drones : 1) {}
 
 void SAROrbitalMode::updateSetpoint(float dt) {
+    if (!_has_target) return;
+
+    _elapsed_time += dt;
+
+    float current_radius, current_omega;
+    {
+        std::lock_guard<std::mutex> lock(_param_mutex);
+        current_radius = _radius;
+        current_omega = _omega;
+    }
+
+    float phase_offset = static_cast<float>(_drone_id) * (2.0f * M_PI / static_cast<float>(_total_drones));
+    float angle = current_omega * _elapsed_time + phase_offset;
+    float altitude_layer = -3.0f - (0.3f * static_cast<float>(_drone_id));
+
+    Eigen::Vector3f offset(
+        current_radius * std::cos(angle),
+        current_radius * std::sin(angle),
+        altitude_layer
+    );
+
+    px4_ros2::TrajectorySetpoint setpoint;
+    setpoint.withPosition(_target_pos + offset)
+            .withYaw(px4_ros2::wrapPi(angle + static_cast<float>(M_PI)));
+    _trajectory_setpoint->update(setpoint);
 }
 
 int main(int argc, char* argv[]) {

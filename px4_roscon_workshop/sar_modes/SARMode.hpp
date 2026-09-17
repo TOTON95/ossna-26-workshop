@@ -1,6 +1,3 @@
-// ============================================================================
-// ORIGINAL VERSION - 
-// ============================================================================
 #pragma once
 
 // PX4 Interface Library
@@ -27,6 +24,7 @@
 #include <cmath>  // for M_PI
 #include <Eigen/Eigen>
 #include <chrono>
+#include <mutex>
 #include <vector>
 #include <string>
 
@@ -77,4 +75,5 @@ private:
     int _total_drones;
     float _radius{3.5f};
     float _omega{0.4f};
+    std::mutex _param_mutex;  // guards _radius/_omega for a future dynamic-reconfigure callback
 };

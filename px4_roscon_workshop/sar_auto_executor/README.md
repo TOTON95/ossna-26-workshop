@@ -23,7 +23,7 @@ Same as [`sar_modes`](../sar_modes/README.md#prerequisites) — Gazebo, 3 PX4 in
 1. Launch the common launchfile (same as `sar_modes`):
 
    ```sh
-   ros2 launch px4_ossna_26 common.launch.py
+   ros2 launch px4_roscon_workshop common.launch.py
    ```
 
 2. Build and run `sar_auto_executor.launch.py`. It starts one `sar_auto_executor` node per drone (namespaced `px4_1`/`px4_2`/`px4_3`) plus `sar_modes`'s `fake_rover_mover.py` (reused, not duplicated — it's a test fixture, not part of this package's logic):

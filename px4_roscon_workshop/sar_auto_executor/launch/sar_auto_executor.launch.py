@@ -72,7 +72,7 @@ def generate_launch_description():
 
     total_drones = 3
     # Same 1-indexed PX4 instance / 0-indexed drone_id convention as
-    # sar_modes (see px4_ossna_26/px4_tf/README.md).
+    # sar_modes (see px4_roscon_workshop/px4_tf/README.md).
     drone_nodes = [
         Node(
             package="sar_auto_executor",
