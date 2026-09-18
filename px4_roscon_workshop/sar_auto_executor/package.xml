@@ -21,6 +21,7 @@
   <exec_depend>launch_ros</exec_depend>
   <!-- launch file runs sar_modes's fake_rover_mover.py, not linked against it -->
   <exec_depend>sar_modes</exec_depend>
+  <exec_depend>px4_roscon_workshop</exec_depend>
 
   <!-- Optional test tools -->
   <test_depend>ament_lint_auto</test_depend>

@@ -1,8 +1,15 @@
+from os import path
+
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+from launch_ros.substitutions import FindPackageShare
+
+# Per-drone Gazebo spawn positions (ENU, spread apart so they don't overlap).
+DRONE_SPAWN_POSITIONS = [(0.0, 0.0), (2.0, 0.0), (4.0, 0.0)]
 
 
 def _float_param(launch_arg_name):
@@ -10,6 +17,16 @@ def _float_param(launch_arg_name):
 
 
 def generate_launch_description():
+
+    px4_autopilot_path_arg = DeclareLaunchArgument(
+        "px4_autopilot_path",
+        default_value=EnvironmentVariable("PX4_PATH", default_value="~/PX4-Autopilot"),
+        description="Path to PX4-Autopilot repository root (supports ~)",
+    )
+    world_arg = DeclareLaunchArgument(
+        "world", default_value="default",
+        description="Name of the Gazebo world to launch"
+    )
 
     rover_x_arg = DeclareLaunchArgument(
         "rover_start_x", default_value="5.0",
@@ -71,8 +88,39 @@ def generate_launch_description():
     )
 
     total_drones = 3
+
+    px4_roscon_workshop_share = FindPackageShare("px4_roscon_workshop").find(
+        "px4_roscon_workshop"
+    )
+    gz_world_launch = path.join(px4_roscon_workshop_share, "launch", "gz_world.launch.py")
+    px4_vehicle_launch = path.join(px4_roscon_workshop_share, "launch", "px4_vehicle.launch.py")
+
+    gz_world = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(gz_world_launch),
+        launch_arguments={
+            "px4_autopilot_path": LaunchConfiguration("px4_autopilot_path"),
+            "world": LaunchConfiguration("world"),
+        }.items(),
+    )
+
     # Same 1-indexed PX4 instance / 0-indexed drone_id convention as
     # sar_modes (see px4_roscon_workshop/px4_tf/README.md).
+    px4_vehicles = [
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(px4_vehicle_launch),
+            launch_arguments={
+                "px4_autopilot_path": LaunchConfiguration("px4_autopilot_path"),
+                "world": LaunchConfiguration("world"),
+                "px4_instance": str(instance_id),
+                "model": f"x500_{instance_id}",
+                "px4_ns": f"px4_{instance_id}",
+                "spawn_pos_x": str(DRONE_SPAWN_POSITIONS[instance_id - 1][0]),
+                "spawn_pos_y": str(DRONE_SPAWN_POSITIONS[instance_id - 1][1]),
+            }.items(),
+        )
+        for instance_id in range(1, total_drones + 1)
+    ]
+
     drone_nodes = [
         Node(
             package="sar_auto_executor",
@@ -92,6 +140,8 @@ def generate_launch_description():
     ]
 
     return LaunchDescription([
+        px4_autopilot_path_arg,
+        world_arg,
         rover_x_arg,
         rover_y_arg,
         rover_yaw_arg,
@@ -101,6 +151,8 @@ def generate_launch_description():
         rover_straight_duration_arg,
         rover_circle_radius_arg,
         rover_num_circle_turns_arg,
+        gz_world,
+        *px4_vehicles,
         *drone_nodes,
         fake_rover_pose,
     ])

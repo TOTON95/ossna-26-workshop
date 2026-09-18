@@ -16,27 +16,32 @@ This package builds on [`sar_modes`](../sar_modes/README.md): same **SAR (V-Swee
 
 ## Prerequisites
 
-Same as [`sar_modes`](../sar_modes/README.md#prerequisites) — Gazebo, 3 PX4 instances (1-indexed, `-i 1`/`-i 2`/`-i 3`, each with its own `romfs` copy — see that README for why), QGroundControl.
+Same as [`sar_modes`](../sar_modes/README.md#prerequisites) — the [dockerized dev environment](../../docs/setup_docker.md), PX4 + the workspace built, QGroundControl (or `commander`, see below).
+
+```sh
+./docker/docker_run.sh ~/PX4-Autopilot
+```
+
+```sh
+cd /PX4-Autopilot && make px4_sitl_default
+cd /workspace && colcon build --symlink-install --packages-select sar_modes sar_auto_executor && source install/setup.bash
+```
 
 ## Usage
 
-1. Launch the common launchfile (same as `sar_modes`):
+`sar_auto_executor.launch.py` brings up the whole exercise in one shot, same as `sar_modes`: Gazebo + the ROS-GZ bridge + `MicroXRCEAgent`, all 3 `x500` PX4 instances spread apart in the world, one `sar_auto_executor` node per drone (namespaced `px4_1`/`px4_2`/`px4_3`), plus `sar_modes`'s `fake_rover_mover.py` (reused, not duplicated — it's a test fixture, not part of this package's logic):
 
-   ```sh
-   ros2 launch px4_roscon_workshop common.launch.py
-   ```
+```sh
+ros2 launch sar_auto_executor sar_auto_executor.launch.py px4_autopilot_path:=/PX4-Autopilot
+```
 
-2. Build and run `sar_auto_executor.launch.py`. It starts one `sar_auto_executor` node per drone (namespaced `px4_1`/`px4_2`/`px4_3`) plus `sar_modes`'s `fake_rover_mover.py` (reused, not duplicated — it's a test fixture, not part of this package's logic):
+(`px4_autopilot_path` defaults to the `PX4_PATH` env var, which `docker_run.sh` already sets to `/PX4-Autopilot` — so inside the container you can usually drop the argument entirely.)
 
-   ```sh
-   colcon build --packages-select sar_modes sar_auto_executor
-   source install/setup.bash
-   ros2 launch sar_auto_executor sar_auto_executor.launch.py
-   ```
+> This spawn plumbing is shared with [`formation_control`](../formation_control/README.md); the coordination logic isn't — SAR tracks one external target, `formation_control` tracks its neighbors.
 
-3. In QGroundControl (or `commander`, see below), arm each vehicle and take off manually, then select **SAR (Auto)**. The executor should immediately schedule into V-Sweep or Orbital based on the rover's current speed, and keep switching automatically as the speed crosses the thresholds.
+In QGroundControl (or `commander`, see below), arm each vehicle and take off manually, then select **SAR (Auto)**. The executor should immediately schedule into V-Sweep or Orbital based on the rover's current speed, and keep switching automatically as the speed crosses the thresholds.
 
-## CLI-only testing
+## Skipping QGroundControl (CLI-only mode selection)
 
 Same `commander` flow as `sar_modes`'s README. With the executor involved there are 3 registered entries, and confirmed live (`commander --instance N status`) they share one `extN` counter — registration order was V-Sweep, Orbital, then the executor's owned Auto mode, giving:
 
